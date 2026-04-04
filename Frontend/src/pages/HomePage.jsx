@@ -9,6 +9,7 @@ import MusicPanel from "../components/music/MusicPanel";
 import LinkPanel from "../components/links/LinkPanel";
 import MoodBoard from "../components/mood/MoodBoard";
 import Navbar from "../components/shared/Navbar";
+import Background from "../components/shared/Background";
 
 export default function HomePage() {
   const { user, checkAuth } = useAuthStore();
@@ -35,17 +36,25 @@ export default function HomePage() {
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-indigo-900/20 rounded-full blur-[120px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-pink-900/10 rounded-full blur-[100px]" />
       </div>
-
+        <Background/>
       <Navbar />
 
       <Toaster
-        position="top-center"
-        toastOptions={{
-          style: { background: "transparent", boxShadow: "none", padding: 0 },
-        }}
-      />
+  position="top-center"
+  toastOptions={{
+    style: {
+      background: "rgba(20,12,36,0.98)",
+      border: "1px solid rgba(139,92,246,0.35)",
+      color: "#e2e8f0",
+      borderRadius: "12px",
+      fontSize: "14px",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+      backdropFilter: "blur(20px)",
+    },
+  }}
+/>
 
-      <div className="flex-1 overflow-hidden pt-16 p-3">
+      <div className="flex-1 overflow-hidden pt-14 p-3">
         <PanelGroup direction="horizontal" className="h-full gap-0">
 
           {/* LEFT — Music + Vibe */}

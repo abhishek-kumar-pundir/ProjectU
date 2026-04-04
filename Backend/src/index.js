@@ -21,7 +21,14 @@ const server = http.createServer(app);
 initSocket(server);
 
 // middleware
-app.use(cors());
+const allowedOrigin = process.env.FRONTEND_URL;
+
+app.use(
+  cors({
+    origin: allowedOrigin,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(errorHandler);
 // test route

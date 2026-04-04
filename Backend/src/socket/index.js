@@ -4,9 +4,15 @@ import { registerSocketHandlers } from "./handlers.js";
 let io;
 
 export const initSocket = (server) => {
-  io = new Server(server, {
-    cors: { origin: "*" },
-  });
+  const allowedOrigin = process.env.FRONTEND_URL;
+
+io = new Server(server, {
+  cors: {
+    origin: allowedOrigin,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
   registerSocketHandlers(io);
   return io;

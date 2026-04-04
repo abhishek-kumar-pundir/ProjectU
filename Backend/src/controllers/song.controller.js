@@ -1,7 +1,18 @@
 import Song from "../models/Song.js";
 import cloudinary from "../lib/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { getIO } from "../socket/index.js"; // ✅ import
+import { getIO } from "../socket/index.js";
+
+export const addSong = async (req, res) => {
+  const { title, singer, fileUrl } = req.body;
+  const song = await Song.create({ title, singer, fileUrl, uploadedBy: req.user });
+  res.json(song);
+};
+
+export const getSongs = asyncHandler(async (req, res) => {
+  const songs = await Song.find().sort({ createdAt: -1 });
+  res.json(songs);
+});
 
 export const uploadSong = async (req, res) => {
   try {
@@ -25,25 +36,23 @@ export const uploadSong = async (req, res) => {
       uploadedBy: req.user,
     });
 
-    // ✅ broadcast to all other clients that a new song was added
-    const io = getIO();
-    io.emit("newSong", song); // use io.emit (all users) not socket.to(room)
+    // ✅ populate uploader username before broadcasting
+    const populated = await song.populate("uploadedBy", "username");
 
-    res.json(song);
+    const io = getIO();
+
+    // existing event — sends song data to update lists
+    io.emit("newSong", populated);
+
+    // ✅ new event — sends notification to both users
+    io.emit("songUploaded", {
+      songTitle: populated.title,
+      uploaderName: populated.uploadedBy?.username,
+    });
+
+    res.json(populated);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Upload failed" });
   }
 };
-
-// keep your other exports unchanged
-export const addSong = async (req, res) => {
-  const { title, singer, fileUrl } = req.body;
-  const song = await Song.create({ title, singer, fileUrl, uploadedBy: req.user });
-  res.json(song);
-};
-
-export const getSongs = asyncHandler(async (req, res) => {
-  const songs = await Song.find().sort({ createdAt: -1 });
-  res.json(songs);
-});
