@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import socket from "../lib/socket";
 import API from "../lib/axios";
+import useAuthStore from "./useAuthStore";
 
 // ✅ import directly — no require()
 import useChatStore from "./useChatStore";
@@ -10,6 +11,7 @@ const useMusicStore = create((set, get) => ({
   currentSongIndex: null,
   isPlaying: false,
   currentTime: 0,
+  lastAction: null,
 
   fetchSongs: async () => {
     const res = await API.get("/songs");
@@ -63,21 +65,33 @@ const useMusicStore = create((set, get) => ({
     }));
   },
 
-  listenSocket: () => {
-    socket.off("songAction");
-    socket.off("newSong");
+listenSocket: () => {
+  socket.off("songAction");
+  socket.off("newSong");
 
-    socket.on("songAction", ({ type, index, currentTime }) => {
-      console.log("received songAction:", type, index, currentTime); // debug
-      if (type === "PLAY") set({ currentSongIndex: index, isPlaying: true, currentTime });
-      if (type === "PAUSE") set({ isPlaying: false, currentTime });
-      if (type === "SEEK") set({ currentTime });
-    });
+  socket.on("songAction", ({ type, index, currentTime }) => {
+    // ✅ import here to avoid circular dep
+    const { otherUser } = useAuthStore.getState();
+    const name = otherUser?.username || "them";
 
-    socket.on("newSong", (song) => {
-      get().addSongToList(song);
-    });
-  },
+    if (type === "PLAY") {
+      set({ currentSongIndex: index, isPlaying: true, currentTime });
+      useChatStore.getState().setLastAction({ type: "PLAYED", byName: name });
+    }
+    if (type === "PAUSE") {
+      set({ isPlaying: false, currentTime });
+      useChatStore.getState().setLastAction({ type: "PAUSED", byName: name });
+    }
+    if (type === "SEEK") {
+      set({ currentTime });
+      useChatStore.getState().setLastAction({ type: "SEEKED", byName: name });
+    }
+  });
+
+  socket.on("newSong", (song) => {
+    get().addSongToList(song);
+  });
+},
 }));
 
 export default useMusicStore;

@@ -10,7 +10,7 @@ export default function MusicPanel() {
     playSongAtIndex, resumeSong, pauseSong, seekTo,
     nextSong, prevSong, listenSocket, fetchSongs,
   } = useMusicStore();
-  const { syncMode, stopSync } = useChatStore();
+  const { syncMode, stopSync, lastAction } = useChatStore();
 
   const audioRef = useRef();
   const [progress, setProgress] = useState(0);
@@ -104,6 +104,27 @@ export default function MusicPanel() {
             <span className="text-xs text-purple-300">listening together</span>
           </div>
           <button onClick={stopSync} className="text-[10px] text-rose-400/60 hover:text-rose-400 transition">end</button>
+        </div>
+      )}
+
+      {lastAction && (
+        <div className="mx-4 mb-2 shrink-0 animate-fade-up">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}>
+            <span className="text-base">
+              {lastAction.type === "PLAYED" ? "▶️" : lastAction.type === "PAUSED" ? "⏸️" : "⏩"}
+            </span>
+            <p className="text-xs text-white/60">
+              <span className="text-white/85 font-medium">{lastAction.byName}</span>
+              {" "}
+              {lastAction.type === "PLAYED" ? "played the song"
+                : lastAction.type === "PAUSED" ? "paused the song"
+                : "skipped ahead"}
+            </p>
+          </div>
         </div>
       )}
 

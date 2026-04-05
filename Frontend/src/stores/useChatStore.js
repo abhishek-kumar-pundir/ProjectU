@@ -12,6 +12,8 @@ const useChatStore = create((set, get) => ({
   onlineUsers: [],
   syncMode: false,
   pendingRequest: false,
+  lastAction: null,
+  newMessageFrom: null,
 
   connectSocket: (userId) => {
     if (!socket.connected) socket.connect();
@@ -30,8 +32,16 @@ const useChatStore = create((set, get) => ({
     socket.on("onlineUsers", (users) => set({ onlineUsers: users }));
 
     socket.on("receiveMessage", (msg) => {
-      set({ messages: [...get().messages, msg] });
-    });
+  const currentUser = useAuthStore.getState().user;
+  const isFromOther = msg.senderId?.toString() !== currentUser?._id?.toString();
+
+  set({ messages: [...get().messages, msg] });
+
+  if (isFromOther) {
+    set({ newMessageFrom: msg.senderId });
+    setTimeout(() => set({ newMessageFrom: null }), 2000);
+  }
+});
 
     socket.on("userCameOnline", ({ userId }) => {
       if (hasNotifiedOnline) return;
@@ -105,6 +115,11 @@ const useChatStore = create((set, get) => ({
     if (!text.trim()) return;
     socket.emit("sendMessage", { senderId, receiverId, text });
   },
+  setLastAction: (action) => {
+  set({ lastAction: action });
+  // auto clear after 3 seconds
+  setTimeout(() => set({ lastAction: null }), 3000);
+},
 }));
 
 export default useChatStore;

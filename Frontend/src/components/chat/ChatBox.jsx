@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import useChatStore from "../../stores/useChatStore";
 import useAuthStore from "../../stores/useAuthStore";
+import MusicBackground from "./MusicBackground";
 
 const formatTime = (dateStr) => {
   if (!dateStr) return "";
@@ -15,8 +16,9 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 };
 
+
 export default function ChatBox() {
-  const { messages, sendMessage, fetchMessages, connectSocket, onlineUsers } = useChatStore();
+  const { messages, sendMessage, fetchMessages, connectSocket, onlineUsers, newMessageFrom } = useChatStore();
   const { user, otherUser, fetchOtherUser } = useAuthStore();
   const [text, setText] = useState("");
   const bottomRef = useRef();
@@ -43,7 +45,6 @@ export default function ChatBox() {
 
   const isOtherOnline = otherUser && onlineUsers.includes(otherUser._id);
 
-  // group messages by date
   const grouped = messages.reduce((acc, msg) => {
     const dateKey = formatDate(msg.createdAt);
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -52,46 +53,24 @@ export default function ChatBox() {
   }, {});
 
   return (
-    <div className="h-full flex flex-col overflow-hidden rounded-2xl relative"
+    // ✅ this is the outer wrapper — border glows on new message
+    <div className="h-full flex flex-col overflow-hidden rounded-2xl relative transition-all duration-500"
       style={{
         background: "linear-gradient(160deg, rgba(18,8,32,0.97) 0%, rgba(10,6,20,0.99) 100%)",
-        border: "1px solid rgba(139,92,246,0.15)",
-        boxShadow: "0 0 40px rgba(139,92,246,0.05), inset 0 1px 0 rgba(255,255,255,0.05)",
+        border: newMessageFrom
+          ? "1px solid rgba(139,92,246,0.55)"
+          : "1px solid rgba(139,92,246,0.15)",
+        boxShadow: newMessageFrom
+          ? "0 0 32px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.05)"
+          : "0 0 40px rgba(139,92,246,0.05), inset 0 1px 0 rgba(255,255,255,0.05)",
       }}>
 
-      {/* ✅ animated background inside chat */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-0">
-        {/* slow drifting orbs */}
-        <div className="absolute w-64 h-64 rounded-full opacity-[0.07]"
-          style={{
-            background: "radial-gradient(circle, #7c3aed, transparent 70%)",
-            top: "10%", left: "20%",
-            animation: "drift 18s ease-in-out infinite",
-          }} />
-        <div className="absolute w-48 h-48 rounded-full opacity-[0.05]"
-          style={{
-            background: "radial-gradient(circle, #ec4899, transparent 70%)",
-            bottom: "15%", right: "15%",
-            animation: "drift 24s ease-in-out infinite reverse",
-          }} />
-        <div className="absolute w-32 h-32 rounded-full opacity-[0.04]"
-          style={{
-            background: "radial-gradient(circle, #a78bfa, transparent 70%)",
-            top: "50%", right: "30%",
-            animation: "pulse-glow 10s ease-in-out infinite",
-          }} />
-
-        {/* subtle dot grid pattern */}
-        <div className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }} />
-      </div>
+      {/* ✅ music animated background */}
+      <MusicBackground />
 
       {/* header */}
       <div className="flex items-center gap-3.5 px-5 py-4 shrink-0 relative z-10"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}>
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.25)" }}>
         <div className="relative">
           <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
             style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", boxShadow: "0 4px 16px rgba(124,58,237,0.5)" }}>
@@ -102,10 +81,18 @@ export default function ChatBox() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-semibold text-white/90">{otherUser?.username || "..."}</p>
-          <p className="text-xs mt-0.5 transition-colors duration-500"
-            style={{ color: isOtherOnline ? "#34d399" : "rgba(255,255,255,0.25)" }}>
-            {isOtherOnline ? "● online now" : "○ offline"}
-          </p>
+          {/* ✅ new message indicator sits here, under their name */}
+          {newMessageFrom ? (
+            <p className="text-[11px] mt-0.5 animate-fade-up"
+              style={{ color: "rgba(192,160,255,0.9)" }}>
+              ✦ just sent a message
+            </p>
+          ) : (
+            <p className="text-xs mt-0.5 transition-colors duration-500"
+              style={{ color: isOtherOnline ? "#34d399" : "rgba(255,255,255,0.25)" }}>
+              {isOtherOnline ? "● online now" : "○ offline"}
+            </p>
+          )}
         </div>
       </div>
 
@@ -120,7 +107,6 @@ export default function ChatBox() {
         ) : (
           Object.entries(grouped).map(([date, msgs]) => (
             <div key={date}>
-              {/* date divider */}
               <div className="flex items-center gap-3 my-5">
                 <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
                 <span className="text-[10px] tracking-widest uppercase px-2 py-1 rounded-full"
@@ -135,18 +121,14 @@ export default function ChatBox() {
                 return (
                   <div key={msg._id || i}
                     className={`flex items-end gap-2.5 mb-4 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                    {/* avatar */}
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mb-1"
                       style={{
-                        background: isMe
-                          ? "linear-gradient(135deg, #7c3aed, #ec4899)"
-                          : "rgba(255,255,255,0.1)",
+                        background: isMe ? "linear-gradient(135deg, #7c3aed, #ec4899)" : "rgba(255,255,255,0.1)",
                         boxShadow: isMe ? "0 2px 8px rgba(124,58,237,0.4)" : "none",
                       }}>
                       {isMe ? user?.username?.[0]?.toUpperCase() : otherUser?.username?.[0]?.toUpperCase()}
                     </div>
 
-                    {/* bubble */}
                     <div className={`flex flex-col gap-1.5 max-w-[72%] ${isMe ? "items-end" : "items-start"}`}>
                       <div className="px-4 py-3 text-[15px] leading-relaxed"
                         style={isMe ? {
@@ -178,11 +160,11 @@ export default function ChatBox() {
 
       {/* input */}
       <div className="px-4 py-4 shrink-0 flex items-center gap-3 relative z-10"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.25)" }}>
+        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.3)" }}>
         <input value={text} onChange={e => setText(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleSend()}
           placeholder="Type something..."
-          className="flex-1 text-sm px-5 py-3 rounded-full outline-none transition-all"
+          className="flex-1 px-5 py-3 rounded-full outline-none transition-all"
           style={{
             background: "rgba(255,255,255,0.06)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -195,7 +177,7 @@ export default function ChatBox() {
             background: "linear-gradient(135deg, #7c3aed, #ec4899)",
             boxShadow: "0 4px 20px rgba(124,58,237,0.5)",
           }}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4 rotate-90">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
             <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
           </svg>
         </button>
