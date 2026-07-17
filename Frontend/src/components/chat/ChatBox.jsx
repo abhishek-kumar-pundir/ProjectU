@@ -19,31 +19,31 @@ const formatDate = (dateStr) => {
 
 export default function ChatBox() {
   const { messages, sendMessage, fetchMessages, connectSocket, onlineUsers, newMessageFrom } = useChatStore();
-  const { user, otherUser, fetchOtherUser } = useAuthStore();
+  const { user, partner, fetchPartner } = useAuthStore();
   const [text, setText] = useState("");
   const bottomRef = useRef();
 
   useEffect(() => {
     if (!user) return;
-    connectSocket(user._id);
-    fetchOtherUser();
+    connectSocket();
+    fetchPartner();
   }, [user]);
 
   useEffect(() => {
-    if (otherUser?._id) fetchMessages(otherUser._id);
-  }, [otherUser]);
+    if (partner?._id) fetchMessages(partner._id);
+  }, [partner]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = () => {
-    if (!text.trim() || !otherUser) return;
-    sendMessage(user._id, otherUser._id, text.trim());
+    if (!text.trim() || !partner) return;
+    sendMessage(text.trim());
     setText("");
   };
 
-  const isOtherOnline = otherUser && onlineUsers.includes(otherUser._id);
+  const isOtherOnline = partner && onlineUsers.includes(partner._id);
 
   const grouped = messages.reduce((acc, msg) => {
     const dateKey = formatDate(msg.createdAt);
@@ -74,13 +74,13 @@ export default function ChatBox() {
         <div className="relative">
           <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
             style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", boxShadow: "0 4px 16px rgba(124,58,237,0.5)" }}>
-            {otherUser?.username?.[0]?.toUpperCase() || "?"}
+            {partner?.username?.[0]?.toUpperCase() || "?"}
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0a0614] transition-colors duration-500"
             style={{ background: isOtherOnline ? "#34d399" : "#374151" }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-white/90">{otherUser?.username || "..."}</p>
+          <p className="text-base font-semibold text-white/90">{partner?.username || "..."}</p>
           {/* ✅ new message indicator sits here, under their name */}
           {newMessageFrom ? (
             <p className="text-[11px] mt-0.5 animate-fade-up"
@@ -126,7 +126,7 @@ export default function ChatBox() {
                         background: isMe ? "linear-gradient(135deg, #7c3aed, #ec4899)" : "rgba(255,255,255,0.1)",
                         boxShadow: isMe ? "0 2px 8px rgba(124,58,237,0.4)" : "none",
                       }}>
-                      {isMe ? user?.username?.[0]?.toUpperCase() : otherUser?.username?.[0]?.toUpperCase()}
+                      {isMe ? user?.username?.[0]?.toUpperCase() : partner?.username?.[0]?.toUpperCase()}
                     </div>
 
                     <div className={`flex flex-col gap-1.5 max-w-[72%] ${isMe ? "items-end" : "items-start"}`}>

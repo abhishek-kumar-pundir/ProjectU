@@ -15,9 +15,10 @@ const useChatStore = create((set, get) => ({
   lastAction: null,
   newMessageFrom: null,
 
-  connectSocket: (userId) => {
+  connectSocket: () => {
+    // the server identifies this socket from the auth cookie and joins it
+    // straight into its own pair's room — no client-sent userId anymore
     if (!socket.connected) socket.connect();
-    socket.emit("join", userId);
 
     socket.off("onlineUsers");
     socket.off("receiveMessage");
@@ -111,9 +112,11 @@ const useChatStore = create((set, get) => ({
     }
   },
 
-  sendMessage: (senderId, receiverId, text) => {
+  sendMessage: (text) => {
     if (!text.trim()) return;
-    socket.emit("sendMessage", { senderId, receiverId, text });
+    // sender/receiver are derived server-side from the authenticated socket,
+    // so the client only ever sends the message text itself
+    socket.emit("sendMessage", { text });
   },
   setLastAction: (action) => {
   set({ lastAction: action });

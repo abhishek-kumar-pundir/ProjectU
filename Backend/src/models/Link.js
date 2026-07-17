@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 const linkSchema = new mongoose.Schema(
   {
     url: String,
-    comment: String, // ✅ optional description when sharing
+    comment: String, // optional description when sharing
+    // scopes this link to one pair, same as Message/Mood
+    pairId: { type: String, index: true },
     sharedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

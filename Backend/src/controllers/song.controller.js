@@ -5,7 +5,9 @@ import { getIO } from "../socket/index.js";
 
 export const addSong = async (req, res) => {
   const { title, singer, fileUrl } = req.body;
-  const song = await Song.create({ title, singer, fileUrl, uploadedBy: req.user });
+  // song library stays global by design — every paired-up user can add to
+  // and see the shared pool of songs, it's only playback sync that's private
+  const song = await Song.create({ title, singer, fileUrl, uploadedBy: req.user._id });
   res.json(song);
 };
 
@@ -33,7 +35,7 @@ export const uploadSong = async (req, res) => {
       title,
       singer,
       fileUrl: uploaded.secure_url,
-      uploadedBy: req.user,
+      uploadedBy: req.user._id,
     });
 
     // ✅ populate uploader username before broadcasting

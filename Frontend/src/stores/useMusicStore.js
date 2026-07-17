@@ -71,8 +71,8 @@ listenSocket: () => {
 
   socket.on("songAction", ({ type, index, currentTime }) => {
     // ✅ import here to avoid circular dep
-    const { otherUser } = useAuthStore.getState();
-    const name = otherUser?.username || "them";
+    const { partner } = useAuthStore.getState();
+    const name = partner?.username || "them";
 
     if (type === "PLAY") {
       set({ currentSongIndex: index, isPlaying: true, currentTime });

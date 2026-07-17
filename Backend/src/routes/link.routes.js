@@ -4,12 +4,12 @@ import {
   getLinks,
   commentOnLink,
 } from "../controllers/link.controller.js";
-import { protect } from "../middleware/auth.js";
+import { protect, requirePartner } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/", protect, addLink);
-router.get("/", protect, getLinks);
-router.post("/:id/comment", protect, commentOnLink);
+router.post("/", protect, requirePartner, addLink);
+router.get("/", protect, requirePartner, getLinks);
+router.post("/:id/comment", protect, requirePartner, commentOnLink);
 
 export default router;

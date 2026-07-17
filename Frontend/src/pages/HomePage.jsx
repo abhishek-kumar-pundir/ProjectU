@@ -10,23 +10,32 @@ import LinkPanel from "../components/links/LinkPanel";
 import MoodBoard from "../components/mood/MoodBoard";
 import Navbar from "../components/shared/Navbar";
 import Background from "../components/shared/Background";
+import PairingGate from "../components/shared/PairingGate";
 
 export default function HomePage() {
-  const { user, checkAuth } = useAuthStore();
+  const { user, fetchPartner } = useAuthStore();
   const { connectSocket } = useChatStore();
   const { listenSocket: listenMusicSocket, fetchSongs } = useMusicStore();
 
   useEffect(() => {
-    checkAuth();
     if (Notification.permission === "default") Notification.requestPermission();
   }, []);
 
   useEffect(() => {
     if (!user?._id) return;
-    connectSocket(user._id);
+    // socket identity/room now comes from the auth cookie server-side, so no
+    // userId needs to be passed here anymore
+    connectSocket();
     listenMusicSocket();
     fetchSongs();
+    fetchPartner();
   }, [user?._id]);
+
+  // no partner linked yet — show the pairing screen instead of a shared
+  // space that (before this change) any other signed-up user could see into
+  if (!user?.partnerId) {
+    return <PairingGate />;
+  }
 
   return (
     <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden">

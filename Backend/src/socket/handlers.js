@@ -1,101 +1,101 @@
 import Message from "../models/Message.js";
+import { getPairId } from "../utils/pairId.js";
 
+// userId -> { socketId, pairId }
 const onlineUsers = {};
-const ROOM_ID = "private-room";
-let syncMode = false; // track if both agreed to listen together
+
+// pairId -> boolean — whether THAT pair currently has "listen together"
+// active. Keyed by pair instead of a single global flag, so pair A/B
+// starting a sync session no longer flips sync on for pair C/D too.
+const syncModeByPair = {};
 
 export const registerSocketHandlers = (io) => {
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+    // identity comes entirely from the authenticated handshake (see
+    // socket/index.js) — there is no client-sent "join" event with an
+    // arbitrary userId anymore, so a socket can only ever land in its own
+    // pair's room.
+    const { userId, partnerId, username } = socket.data;
+    const pairId = partnerId ? getPairId(userId, partnerId) : null;
 
-    socket.on("join", (userId) => {
-  onlineUsers[userId] = socket.id;
-  socket.join(ROOM_ID);
-  io.emit("onlineUsers", Object.keys(onlineUsers));
+    console.log("User connected:", socket.id, userId);
 
-  // ✅ only emit to the OTHER person, not back to self
-  socket.to(ROOM_ID).emit("userCameOnline", { userId });
-});
+    if (pairId) {
+      socket.join(pairId);
+      onlineUsers[userId] = { socketId: socket.id, pairId };
 
+      const partnerEntry = onlineUsers[partnerId];
+      const onlineIds = partnerEntry ? [userId, partnerId] : [userId];
+      // only tell this pair's room who's online, not the whole server
+      io.to(pairId).emit("onlineUsers", onlineIds);
 
-    // 💬 CHAT
-    socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
+      socket.to(pairId).emit("userCameOnline", { userId });
+    }
+
+    // 💬 CHAT — text only; sender/receiver are derived server-side from the
+    // authenticated socket, so a client can no longer pass an arbitrary
+    // receiverId to message into someone else's pair
+    socket.on("sendMessage", async ({ text }) => {
       try {
-        if (!text) return;
-        const message = await Message.create({ senderId, receiverId, text });
-        const receiverSocket = onlineUsers[receiverId];
-        if (receiverSocket) io.to(receiverSocket).emit("receiveMessage", message);
-        socket.emit("receiveMessage", message);
+        if (!text?.trim() || !pairId) return;
+
+        const message = await Message.create({
+          senderId: userId,
+          receiverId: partnerId,
+          pairId,
+          text: text.trim(),
+        });
+
+        io.to(pairId).emit("receiveMessage", message);
       } catch (error) {
         console.error("Message error:", error.message);
       }
     });
 
-    // 🎵 SONG SYNC
+    // 🎵 SONG SYNC — private to this pair's room only
     socket.on("songAction", (payload) => {
-      if (syncMode) {
-        socket.to(ROOM_ID).emit("songAction", payload);
+      if (pairId && syncModeByPair[pairId]) {
+        socket.to(pairId).emit("songAction", payload);
       }
-    });
-
-    socket.on("uploadSong", (song) => {
-      socket.to(ROOM_ID).emit("newSong", song);
-    });
-
-    socket.on("addLink", (link) => {
-      socket.to(ROOM_ID).emit("newLink", link);
-    });
-
-    socket.on("commentLink", (link) => {
-      socket.to(ROOM_ID).emit("updateLink", link);
-    });
-
-    // 🎧 LISTEN TOGETHER HANDSHAKE
-    // User A sends invite to User B
-    socket.on("listenRequest", ({ fromUserId, fromUsername }) => {
-      socket.to(ROOM_ID).emit("listenRequest", { fromUserId, fromUsername });
-    });
-
-    // User B responds
-    socket.on("listenResponse", ({ accepted }) => {
-      if (accepted) {
-        syncMode = true;
-        // tell BOTH users sync is active
-        io.to(ROOM_ID).emit("syncStarted");
-      } else {
-        io.to(ROOM_ID).emit("syncDeclined");
-      }
-    });
-
-    // Either user can stop sync
-    socket.on("stopSync", () => {
-      syncMode = false;
-      io.to(ROOM_ID).emit("syncStopped");
     });
 
     socket.on("requestSongState", () => {
-      socket.to(ROOM_ID).emit("requestSongState");
+      if (pairId) socket.to(pairId).emit("requestSongState");
     });
 
     socket.on("sendSongState", (state) => {
-      socket.to(ROOM_ID).emit("receiveSongState", state);
+      if (pairId) socket.to(pairId).emit("receiveSongState", state);
     });
 
-    socket.on("moodUpdated", (mood) => {
-      socket.to(ROOM_ID).emit("moodUpdated", mood);
+    // 🎧 LISTEN TOGETHER HANDSHAKE — scoped to this pair's room
+    socket.on("listenRequest", () => {
+      if (!pairId) return;
+      socket.to(pairId).emit("listenRequest", { fromUserId: userId, fromUsername: username });
+    });
+
+    socket.on("listenResponse", ({ accepted }) => {
+      if (!pairId) return;
+      if (accepted) {
+        syncModeByPair[pairId] = true;
+        io.to(pairId).emit("syncStarted");
+      } else {
+        io.to(pairId).emit("syncDeclined");
+      }
+    });
+
+    socket.on("stopSync", () => {
+      if (!pairId) return;
+      syncModeByPair[pairId] = false;
+      io.to(pairId).emit("syncStopped");
     });
 
     // ❌ DISCONNECT
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
-      for (let userId in onlineUsers) {
-        if (onlineUsers[userId] === socket.id) {
-          delete onlineUsers[userId];
-          // notify other user this person went offline
-          socket.to(ROOM_ID).emit("userWentOffline", { userId });
-        }
+      if (onlineUsers[userId]?.socketId === socket.id) {
+        delete onlineUsers[userId];
+        if (pairId) socket.to(pairId).emit("userWentOffline", { userId });
       }
-      io.emit("onlineUsers", Object.keys(onlineUsers));
     });
   });
 };
