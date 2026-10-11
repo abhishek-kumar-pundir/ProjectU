@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import useLinkStore from "../../stores/useLinkStore";
 import useAuthStore from "../../stores/useAuthStore";
 import { Link2, ExternalLink } from "lucide-react";
-import { SmartImage } from "react-fastload";
 
 export default function LinkPanel() {
   const { links, fetchLinks, addLink, addComment, listenSocket } = useLinkStore();
@@ -135,15 +134,13 @@ export default function LinkPanel() {
             {/* link */}
             <div className="flex items-center gap-2 mb-2">
               {getDomain(l.url) && (
-                <SmartImage
+                <img
                   src={`https://www.google.com/s2/favicons?domain=${getDomain(l.url)}&sz=64`}
                   alt=""
-                  priority="LOW"
-                  strategy="lazy"
                   width={15}
                   height={15}
+                  loading="lazy"
                   className="w-3.5 h-3.5 rounded-sm shrink-0 opacity-75"
-                  style={{ width: 15, height: 15 }}
                 />
               )}
               <a href={l.url} target="_blank" rel="noopener noreferrer"

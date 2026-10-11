@@ -10,7 +10,6 @@ createRoot(document.getElementById('root')).render(
       strategy="adaptive"
       concurrency={4}
       preloadDistance={800}
-      debug={import.meta.env.DEV}
     >
       <App />
     </FastLoadProvider>

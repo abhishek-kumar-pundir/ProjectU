@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import useChatStore from "../../stores/useChatStore";
 import useAuthStore from "../../stores/useAuthStore";
 import MusicBackground from "./MusicBackground";
-import { SmartImage } from "react-fastload";
 
 const formatTime = (dateStr) => {
   if (!dateStr) return "";
@@ -74,15 +73,12 @@ export default function ChatBox() {
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.25)" }}>
         <div className="relative">
           {partner?.avatar ? (
-            <SmartImage
+            <img
               src={partner.avatar}
               alt={partner.username}
-              priority="HIGH"
-              strategy="eager"
               width={44}
               height={44}
               className="w-11 h-11 rounded-full object-cover shrink-0"
-              style={{ width: 44, height: 44 }}
             />
           ) : (
             <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
