@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import useChatStore from "../../stores/useChatStore";
 import useAuthStore from "../../stores/useAuthStore";
 import MusicBackground from "./MusicBackground";
+import { SmartImage } from "react-fastload";
 
 const formatTime = (dateStr) => {
   if (!dateStr) return "";
@@ -27,11 +28,11 @@ export default function ChatBox() {
     if (!user) return;
     connectSocket();
     fetchPartner();
-  }, [user]);
+  }, [user, connectSocket, fetchPartner]);
 
   useEffect(() => {
     if (partner?._id) fetchMessages(partner._id);
-  }, [partner]);
+  }, [partner?._id, fetchMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,10 +73,23 @@ export default function ChatBox() {
       <div className="flex items-center gap-3.5 px-5 py-4 shrink-0 relative z-10"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.25)" }}>
         <div className="relative">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
-            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", boxShadow: "0 4px 16px rgba(124,58,237,0.5)" }}>
-            {partner?.username?.[0]?.toUpperCase() || "?"}
-          </div>
+          {partner?.avatar ? (
+            <SmartImage
+              src={partner.avatar}
+              alt={partner.username}
+              priority="HIGH"
+              strategy="eager"
+              width={44}
+              height={44}
+              className="w-11 h-11 rounded-full object-cover shrink-0"
+              style={{ width: 44, height: 44 }}
+            />
+          ) : (
+            <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", boxShadow: "0 4px 16px rgba(124,58,237,0.5)" }}>
+              {partner?.username?.[0]?.toUpperCase() || "?"}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0a0614] transition-colors duration-500"
             style={{ background: isOtherOnline ? "#34d399" : "#374151" }} />
         </div>

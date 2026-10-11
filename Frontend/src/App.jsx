@@ -1,8 +1,19 @@
-import useAuthStore from "./stores/useAuthStore";
-import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
 import { useEffect, useState } from "react";
+import useAuthStore from "./stores/useAuthStore";
 import LoadingScreen from "./components/shared/LoadingScreen";
+import { lazyComponent } from "react-fastload";
+
+const HomePage = lazyComponent(() => import("./pages/HomePage"), {
+  priority: "CRITICAL",
+  strategy: "eager",
+  fallback: <LoadingScreen />,
+});
+
+const LoginPage = lazyComponent(() => import("./pages/LoginPage"), {
+  priority: "CRITICAL",
+  strategy: "eager",
+  fallback: <LoadingScreen />,
+});
 
 function App() {
   const { user, checkAuth } = useAuthStore();
@@ -18,7 +29,7 @@ function App() {
     };
 
     init();
-  }, []);
+  }, [checkAuth]);
 
   if (loading) return <LoadingScreen />;
 

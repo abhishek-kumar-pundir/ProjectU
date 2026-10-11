@@ -2,7 +2,7 @@ import { create } from "zustand";
 import API from "../lib/axios";
 import socket from "../lib/socket";
 
-const useLinkStore = create((set, get) => ({
+const useLinkStore = create((set) => ({
   links: [],
 
   fetchLinks: async () => {

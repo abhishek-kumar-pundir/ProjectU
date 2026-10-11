@@ -5,12 +5,25 @@ import useAuthStore from "../stores/useAuthStore";
 import useChatStore from "../stores/useChatStore";
 import useMusicStore from "../stores/useMusicStore";
 import ChatBox from "../components/chat/ChatBox";
-import MusicPanel from "../components/music/MusicPanel";
-import LinkPanel from "../components/links/LinkPanel";
-import MoodBoard from "../components/mood/MoodBoard";
 import Navbar from "../components/shared/Navbar";
 import Background from "../components/shared/Background";
 import PairingGate from "../components/shared/PairingGate";
+import { lazyComponent } from "react-fastload";
+
+const MusicPanel = lazyComponent(() => import("../components/music/MusicPanel"), {
+  priority: "HIGH",
+  fallback: <div className="h-full rounded-2xl bg-white/[0.03] border border-white/5 animate-pulse" />,
+});
+
+const MoodBoard = lazyComponent(() => import("../components/mood/MoodBoard"), {
+  priority: "NORMAL",
+  fallback: <div className="h-44 rounded-2xl bg-white/[0.03] border border-white/5 animate-pulse" />,
+});
+
+const LinkPanel = lazyComponent(() => import("../components/links/LinkPanel"), {
+  priority: "NORMAL",
+  fallback: <div className="h-full rounded-2xl bg-white/[0.03] border border-white/5 animate-pulse" />,
+});
 
 export default function HomePage() {
   const { user, fetchPartner } = useAuthStore();
@@ -29,7 +42,7 @@ export default function HomePage() {
     listenMusicSocket();
     fetchSongs();
     fetchPartner();
-  }, [user?._id]);
+  }, [user?._id, connectSocket, listenMusicSocket, fetchSongs, fetchPartner]);
 
   // no partner linked yet — show the pairing screen instead of a shared
   // space that (before this change) any other signed-up user could see into

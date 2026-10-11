@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useLinkStore from "../../stores/useLinkStore";
 import useAuthStore from "../../stores/useAuthStore";
 import { Link2, ExternalLink } from "lucide-react";
+import { SmartImage } from "react-fastload";
 
 export default function LinkPanel() {
   const { links, fetchLinks, addLink, addComment, listenSocket } = useLinkStore();
@@ -11,7 +12,7 @@ export default function LinkPanel() {
   const [openCommentId, setOpenCommentId] = useState(null);
   const [commentText, setCommentText] = useState("");
 
-  useEffect(() => { fetchLinks(); listenSocket(); }, []);
+  useEffect(() => { fetchLinks(); listenSocket(); }, [fetchLinks, listenSocket]);
 
   const handleAdd = () => {
     if (!url.trim()) return;
@@ -30,6 +31,14 @@ export default function LinkPanel() {
       const u = new URL(url);
       return u.hostname + (u.pathname !== "/" ? u.pathname.slice(0, 22) + "…" : "");
     } catch { return url.slice(0, 38) + "…"; }
+  };
+
+  const getDomain = (rawUrl) => {
+    try {
+      return new URL(rawUrl).hostname;
+    } catch {
+      return "";
+    }
   };
 
   const isMe = (sharedBy) => sharedBy?.username === user?.username;
@@ -124,11 +133,25 @@ export default function LinkPanel() {
             </div>
 
             {/* link */}
-            <a href={l.url} target="_blank" rel="noopener noreferrer"
-              className="block text-[13px] font-medium mb-2 transition-colors hover:text-blue-300 break-all leading-snug"
-              style={{ color: "rgba(147,197,253,0.9)" }}>
-              {truncateUrl(l.url)}
-            </a>
+            <div className="flex items-center gap-2 mb-2">
+              {getDomain(l.url) && (
+                <SmartImage
+                  src={`https://www.google.com/s2/favicons?domain=${getDomain(l.url)}&sz=64`}
+                  alt=""
+                  priority="LOW"
+                  strategy="lazy"
+                  width={15}
+                  height={15}
+                  className="w-3.5 h-3.5 rounded-sm shrink-0 opacity-75"
+                  style={{ width: 15, height: 15 }}
+                />
+              )}
+              <a href={l.url} target="_blank" rel="noopener noreferrer"
+                className="block text-[13px] font-medium transition-colors hover:text-blue-300 break-all leading-snug"
+                style={{ color: "rgba(147,197,253,0.9)" }}>
+                {truncateUrl(l.url)}
+              </a>
+            </div>
 
             {/* note — not italic, warm and readable */}
             {l.comment && (

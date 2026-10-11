@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import useAuthStore from "../../stores/useAuthStore";
 import useChatStore from "../../stores/useChatStore";
+import { SmartImage, useFastLoadMetrics } from "react-fastload";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
   const { syncMode, stopSync } = useChatStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef();
+  const metrics = useFastLoadMetrics();
 
   // close on outside click
   useEffect(() => {
@@ -28,9 +30,21 @@ export default function Navbar() {
       }}>
 
       {/* Logo */}
-      <span className="font-display text-2xl font-semibold shimmer-text tracking-wide">
-        ProjectU
-      </span>
+      <div className="flex items-center gap-2.5">
+        <SmartImage
+          src="/favicon.png"
+          alt="ProjectU Logo"
+          priority="CRITICAL"
+          strategy="eager"
+          width={24}
+          height={24}
+          className="w-6 h-6 rounded-lg object-contain shadow-sm shadow-purple-500/50"
+          style={{ width: 24, height: 24 }}
+        />
+        <span className="font-display text-2xl font-semibold shimmer-text tracking-wide">
+          ProjectU
+        </span>
+      </div>
 
       {/* sync pill */}
       {syncMode && (
@@ -96,6 +110,27 @@ export default function Navbar() {
                     <p className="text-xs text-zinc-500 mt-0.5">{user.email}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* FastLoad scheduler status card */}
+              <div className="mx-2 my-2 px-3 py-2 rounded-xl"
+                style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
+                <div className="flex items-center justify-between text-[11px] text-purple-300 font-medium mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    FastLoad Engine
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-purple-400/80">Active</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-zinc-400">
+                  <span>Scheduled: {metrics.initialRequests + metrics.deferredRequests}</span>
+                  <span>Deferred: {metrics.deferredRequests}</span>
+                </div>
+                {metrics.fcp && (
+                  <div className="text-[9px] text-zinc-500 mt-1 border-t border-white/5 pt-1">
+                    FCP: {Math.round(metrics.fcp)}ms {metrics.lcp ? `• LCP: ${Math.round(metrics.lcp)}ms` : ""}
+                  </div>
+                )}
               </div>
 
               {/* menu items */}

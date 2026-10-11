@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import useMusicStore from "../../stores/useMusicStore";
 import useChatStore from "../../stores/useChatStore";
-import UploadSong from "./UploadSong";
 import { Play, Pause, SkipForward, SkipBack, Plus, X, Music2 } from "lucide-react";
+import { lazyComponent } from "react-fastload";
+
+const UploadSong = lazyComponent(() => import("./UploadSong"), {
+  priority: "LOW",
+  fallback: <div className="p-4 rounded-xl bg-purple-500/10 animate-pulse text-xs text-white/40">Loading uploader...</div>,
+});
 
 export default function MusicPanel() {
   const {
@@ -19,7 +24,7 @@ export default function MusicPanel() {
 
   const currentSong = currentSongIndex !== null ? songs[currentSongIndex] : null;
 
-  useEffect(() => { fetchSongs(); listenSocket(); }, []);
+  useEffect(() => { fetchSongs(); listenSocket(); }, [fetchSongs, listenSocket]);
 
   useEffect(() => {
     if (!audioRef.current || currentSongIndex === null) return;
@@ -37,7 +42,7 @@ export default function MusicPanel() {
         audio.addEventListener("canplay", onCanPlay);
       }
     }
-  }, [currentSongIndex]);
+  }, [currentSongIndex, songs, isPlaying, currentTime]);
 
   useEffect(() => {
     if (!audioRef.current || currentSongIndex === null) return;
@@ -45,7 +50,7 @@ export default function MusicPanel() {
     if (!audio.src || audio.src === window.location.href) return;
     if (isPlaying) audio.play().catch(() => {});
     else audio.pause();
-  }, [isPlaying]);
+  }, [isPlaying, currentSongIndex]);
 
   useEffect(() => {
     if (!audioRef.current || isSeeking.current) return;

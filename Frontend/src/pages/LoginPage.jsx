@@ -1,6 +1,7 @@
 import { useState } from "react";
 import useAuthStore from "../stores/useAuthStore";
 import Background from "../components/shared/Background";
+import { SmartImage } from "react-fastload";
 
 export default function LoginPage() {
   const { login, register } = useAuthStore();
@@ -33,6 +34,20 @@ export default function LoginPage() {
 
         {/* logo mark */}
         <div className="text-center mb-10 animate-fade-up">
+          <div className="flex justify-center mb-4">
+            <div className="p-1.5 rounded-3xl bg-white/[0.04] border border-white/10 shadow-xl shadow-purple-500/10 backdrop-blur-md">
+              <SmartImage
+                src="/favicon.png"
+                alt="ProjectU Logo"
+                priority="CRITICAL"
+                strategy="eager"
+                width={56}
+                height={56}
+                className="w-14 h-14 rounded-2xl object-cover hover:scale-105 transition-transform duration-300"
+                style={{ width: 56, height: 56 }}
+              />
+            </div>
+          </div>
           <h1 className="font-display text-6xl font-semibold tracking-tight shimmer-text mb-2">
             ProjectU
           </h1>

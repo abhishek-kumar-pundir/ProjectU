@@ -21,6 +21,7 @@ backend/dist/
 # Env files
 .env
 .env.*
+!.env.example
 *.local
 
 # Editor / OS files
@@ -29,6 +30,8 @@ backend/dist/
 .idea
 .DS_Store
 Thumbs.db
+desktop.ini
+Desktop.ini
 
 # Misc
 *.suo

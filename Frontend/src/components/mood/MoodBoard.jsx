@@ -5,6 +5,20 @@ import useAuthStore from "../../stores/useAuthStore";
 const PRESET_COLORS = ["#7c3aed","#a855f7","#ec4899","#f43f5e","#3b82f6","#06b6d4","#10b981","#f59e0b"];
 const PRESET_EMOJIS = ["💜","🌙","✨","🍂","💙","🌸","🔥","🌊","☁️","🌿","🫧","🕯️"];
 
+function VibePill({ label, mood }) {
+  return (
+    <div className="flex-1 rounded-xl p-3 flex flex-col items-center gap-1.5 transition-all duration-500"
+      style={{
+        background: mood?.color ? `${mood.color}18` : "rgba(255,255,255,0.03)",
+        border: `1px solid ${mood?.color ? `${mood.color}40` : "rgba(255,255,255,0.07)"}`,
+      }}>
+      <span className="text-[9px] tracking-widest uppercase text-white/30">{label}</span>
+      <span className="text-2xl leading-none">{mood?.emoji || "·"}</span>
+      <span className="text-[11px] text-white/70 font-medium">{mood?.word || "—"}</span>
+    </div>
+  );
+}
+
 export default function MoodBoard() {
   const { myMood, theirMood, fetchMoods, setMood, listenSocket } = useMoodStore();
   const { user } = useAuthStore();
@@ -17,29 +31,20 @@ export default function MoodBoard() {
     if (!user?._id) return;
     fetchMoods(user._id);
     listenSocket(user._id);
-  }, [user?._id]);
+  }, [user?._id, fetchMoods, listenSocket]);
 
-  useEffect(() => {
-    if (myMood) { setWord(myMood.word || ""); setEmoji(myMood.emoji || "💜"); setColor(myMood.color || "#7c3aed"); }
-  }, [myMood]);
+  const startEditing = () => {
+    setWord(myMood?.word || "");
+    setEmoji(myMood?.emoji || "💜");
+    setColor(myMood?.color || "#7c3aed");
+    setEditing(true);
+  };
 
   const handleSave = () => {
     if (!word.trim()) return;
-    setMood(word.trim(), emoji, color, user._id);
+    setMood(word.trim(), emoji, color);
     setEditing(false);
   };
-
-  const VibePill = ({ label, mood }) => (
-    <div className="flex-1 rounded-xl p-3 flex flex-col items-center gap-1.5 transition-all duration-500"
-      style={{
-        background: mood?.color ? `${mood.color}18` : "rgba(255,255,255,0.03)",
-        border: `1px solid ${mood?.color ? `${mood.color}40` : "rgba(255,255,255,0.07)"}`,
-      }}>
-      <span className="text-[9px] tracking-widest uppercase text-white/30">{label}</span>
-      <span className="text-2xl leading-none">{mood?.emoji || "·"}</span>
-      <span className="text-[11px] text-white/70 font-medium">{mood?.word || "—"}</span>
-    </div>
-  );
 
   return (
     <div className="rounded-2xl p-4"
@@ -60,7 +65,7 @@ export default function MoodBoard() {
       </div>
 
       {!editing ? (
-        <button onClick={() => setEditing(true)}
+        <button onClick={startEditing}
           className="w-full py-2 rounded-xl text-xs text-white/40 hover:text-white/70 transition-all duration-200"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
           {myMood ? "change vibe" : "set your vibe"}

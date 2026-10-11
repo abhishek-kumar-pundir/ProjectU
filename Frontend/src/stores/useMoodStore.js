@@ -2,7 +2,7 @@ import { create } from "zustand";
 import API from "../lib/axios";
 import socket from "../lib/socket";
 
-const useMoodStore = create((set, get) => ({
+const useMoodStore = create((set) => ({
   myMood: null,      // { word, emoji, color, userId }
   theirMood: null,   // same shape
 
@@ -24,7 +24,7 @@ const useMoodStore = create((set, get) => ({
     }
   },
 
-  setMood: async (word, emoji, color, currentUserId) => {
+  setMood: async (word, emoji, color) => {
     try {
       const res = await API.post("/mood", { word, emoji, color });
       set({ myMood: res.data });
